@@ -1,5 +1,7 @@
 const WebSocket = require('ws');
 const { server } = require('ws');
+const request = require('request');
+const ip = require('ip');
 
 const sockets = [];
 
@@ -18,11 +20,34 @@ class Message {
 
 const initP2PServer = (p2pPort) => {
     const server = new WebSocket.Server({port: p2pPort});
-    server.on('connection', (ws) => {
+    server.on('connection', (ws, req) => {
         initConnection(ws);
+        reciprocateConnection(req.connection.remoteAddress);
+
     });
     console.log('listening websocket p2p port on: ' + p2pPort);
 };
+
+const reciprocateConnection = (connectedIp) => {
+    const connectedUrl = `http://${connectedIp}:6001`
+    const myIp = ip.address();
+    const requestData = {
+        uri: `${connectedUrl}/addPeer`,
+        body: JSON.stringify({peer: `ws://${myIp}:6001`}),
+        method: 'POST',
+        headers: {
+            'Content-type': 'application/json'
+        }
+    }
+
+    console.log('reciprocating connection to ' + connectedUrl);
+    request(requestData, (error, response) => {
+        if (error) {
+            console.log('reciprocation error: ' + error);
+        }
+        console.log('reciprocation success: ' + response.body);
+    })
+}
 
 const getSockets = () => sockets;
 
