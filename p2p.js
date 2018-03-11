@@ -21,33 +21,11 @@ class Message {
 const initP2PServer = (p2pPort) => {
     const server = new WebSocket.Server({port: p2pPort});
     server.on('connection', (ws, req) => {
+        console.log('a peer has connected');
         initConnection(ws);
-        reciprocateConnection(req.connection.remoteAddress);
-
     });
     console.log('listening websocket p2p port on: ' + p2pPort);
 };
-
-const reciprocateConnection = (connectedIp) => {
-    const connectedUrl = `http://${connectedIp}:6001`
-    const myIp = ip.address();
-    const requestData = {
-        uri: `${connectedUrl}/addPeer`,
-        body: JSON.stringify({peer: `ws://${myIp}:6001`}),
-        method: 'POST',
-        headers: {
-            'Content-type': 'application/json'
-        }
-    }
-
-    console.log('reciprocating connection to ' + connectedUrl);
-    request(requestData, (error, response) => {
-        if (error) {
-            console.log('reciprocation error: ' + error);
-        }
-        console.log('reciprocation success: ' + response.body);
-    })
-}
 
 const getSockets = () => sockets;
 
@@ -199,6 +177,8 @@ const broadcastLatest = () => {
 const connectToPeers = (newPeer) => {
     const ws = new WebSocket(newPeer);
     ws.on('open', () => {
+
+        console.log('this node has connected to a peer');
         initConnection(ws);
     });
     ws.on('error', () => {
